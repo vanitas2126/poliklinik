@@ -8,19 +8,17 @@ class ResepObat extends Model
 {
     protected $fillable = [
         'kunjungan_id',
-        'obat_id',
-        'dosis',
-        'aturan_pakai',
-        'jumlah',
+        'sumber_resep',
+        'detail_obat',
+        'status',
+    ];
+
+    protected $casts = [
+        'detail_obat' => 'array',
     ];
 
     public function kunjungan()
     {
         return $this->belongsTo(Kunjungan::class);
-    }
-
-    public function obat()
-    {
-        return $this->belongsTo(Obat::class);
     }
 }
