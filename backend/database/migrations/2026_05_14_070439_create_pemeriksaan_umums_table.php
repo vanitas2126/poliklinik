@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('pemeriksaan_umums', function (Blueprint $table) {
             $table->id();
             $table->foreignId('kunjungan_id')->constrained('kunjungans')->onDelete('cascade');
-            $table->foreignId('dokter_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('dokter_id')->constrained('dokters')->onDelete('cascade');
             $table->text('pemeriksaan_awal')->nullable();
             $table->enum('kategori_penyakit', ['ringan', 'berat'])->nullable();
             $table->text('diagnosa_awal')->nullable();

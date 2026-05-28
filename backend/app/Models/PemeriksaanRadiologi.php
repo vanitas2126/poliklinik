@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['kunjungan_id', 'petugas_id', 'jenis_pemeriksaan', 'hasil_radiologi', 'file_lampiran', 'status'])]
+#[Fillable(['kunjungan_id', 'dokter_id', 'jenis_pemeriksaan', 'hasil_radiologi', 'file_lampiran', 'status'])]
 class PemeriksaanRadiologi extends Model
 {
     public function kunjungan()
@@ -14,8 +14,8 @@ class PemeriksaanRadiologi extends Model
         return $this->belongsTo(Kunjungan::class, 'kunjungan_id');
     }
 
-    public function petugas()
+    public function dokter()
     {
-        return $this->belongsTo(User::class, 'petugas_id');
+        return $this->belongsTo(Dokter::class, 'dokter_id');
     }
 }

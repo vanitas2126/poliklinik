@@ -1,98 +1,273 @@
 # Product Requirements Document (PRD) - Sistem Informasi Poliklinik
 
-## 1. Pendahuluan
-Dokumen ini merupakan *source of truth* untuk pengembangan **Sistem Informasi Poliklinik**. Dokumen ini menjelaskan arsitektur, peran (roles), alur kerja, status proyek saat ini, dan roadmap pengembangan untuk frontend dan backend. Dokumen ini wajib dibaca oleh AI sebagai pedoman sebelum mengeksekusi prompt selanjutnya agar solusi yang diberikan relevan dan terstruktur.
+## 1. Ringkasan Produk
 
----
+Sistem Informasi Poliklinik adalah aplikasi web untuk mengelola alur layanan pasien dari pendaftaran, pemeriksaan dokter umum, rujukan penunjang/spesialis, resep obat, sampai penyelesaian layanan di apotek.
 
-## 2. Aktor dan Peran (Roles)
-Sistem ini menggunakan *role-based access control* (RBAC) dengan peran sebagai berikut:
-- **Admin**: Bertugas mendaftarkan kunjungan pasien baru dan mengarahkan pasien ke Poli Umum.
-- **Pasien**: Entitas utama yang diperiksa. (Data pasien disimpan dalam tabel `users` dengan role pasien, dikelola oleh Admin).
-- **Dokter Umum**: Melakukan pemeriksaan awal (anamnesa, diagnosa awal, tindakan). Dapat merujuk pasien ke Lab, Radiologi, Spesialis, atau langsung menuliskan resep obat.
-- **Petugas Lab**: Menerima rujukan lab, menginput data hasil pemeriksaan lab, dan mengunggah dokumen/file lampiran.
-- **Petugas Radiologi**: Menerima rujukan radiologi, menginput data hasil radiologi, dan mengunggah dokumen/file lampiran.
-- **Dokter Spesialis**: Menerima rujukan dari dokter umum, memberikan analisa rujukan, diagnosa akhir, tindakan akhir, dan menuliskan resep obat.
-- **Apoteker**: Menerima daftar resep obat dari dokter, menyiapkan obat, dan menyelesaikan alur kunjungan pasien.
+Produk terdiri dari:
 
----
+- **Backend**: Laravel API untuk mengelola data user, dokter, kunjungan, pemeriksaan, rujukan, dan resep.
+- **Frontend**: React + TypeScript untuk dashboard per role.
+- **Database**: database relasional melalui migration Laravel.
 
-## 3. Alur Kerja Sistem (System Workflow)
-1. **Pendaftaran (Admin)**: Admin membuat record `Kunjungan` untuk pasien dengan status default `poli_umum`.
-2. **Pemeriksaan Awal (Dokter Umum)**: Dokter Umum memproses antrean kunjungan dengan membuat record `PemeriksaanUmum`.
-   - Jika butuh rujukan: Dokter mengubah status kunjungan ke `lab`, `radiologi`, atau `spesialis`.
-   - Jika tidak butuh rujukan: Dokter membuat `ResepObat` dan mengubah status kunjungan ke `apotek`.
-3. **Pemeriksaan Lanjutan (Jika Dirujuk)**:
-   - **Lab**: Petugas memproses `PemeriksaanLab` dan mengubah statusnya menjadi `selesai`.
-   - **Radiologi**: Petugas memproses `PemeriksaanRadiologi` dan mengubah statusnya menjadi `selesai`.
-   - **Spesialis**: Dokter Spesialis memproses `PemeriksaanSpesialis`, memberikan `ResepObat`, dan mengubah status kunjungan ke `apotek`.
-4. **Pengambilan Obat (Apoteker)**: Apoteker memproses `ResepObat` dan mengubah status kunjungan menjadi `selesai`.
+## 2. Tujuan Produk
 
----
+1. Memusatkan data kunjungan pasien dalam satu sistem.
+2. Mempercepat pendaftaran pasien dan pembentukan antrean poli umum.
+3. Membantu dokter umum mencatat pemeriksaan awal dan menentukan rujukan.
+4. Mendukung proses rujukan ke lab, radiologi, atau dokter spesialis.
+5. Menghubungkan hasil pemeriksaan lanjutan kembali ke dokter umum.
+6. Mengelola resep sampai kunjungan selesai di apotek.
+7. Menjadi fondasi rekam medis sederhana berbasis role.
 
-## 4. Status Proyek Saat Ini (Current State)
+## 3. Target User
 
-### Backend (Laravel 11.x)
-- [x] Instalasi Laravel & Setup Database (MySQL/SQLite).
-- [x] Pembuatan tabel & relasi (*Kunjungan, PemeriksaanUmum, PemeriksaanLab, PemeriksaanRadiologi, PemeriksaanSpesialis, ResepObat, User*).
-- [x] Pembuatan Model Eloquent beserta fungsi relasinya.
-- [ ] **Pending**: Instalasi API Laravel (`php artisan install:api`) dan konfigurasi Laravel Sanctum/JWT.
-- [ ] **Pending**: Pembuatan endpoint API (`routes/api.php`).
-- [ ] **Pending**: Pembuatan Controllers, Form Requests, API Resources, dan implementasi Role Middleware.
+| User | Kebutuhan |
+| --- | --- |
+| Admin | Mendaftarkan pasien/kunjungan dan mengelola data dokter. |
+| Pasien | Menjadi entitas penerima layanan. Saat ini belum memiliki dashboard mandiri. |
+| Dokter Umum | Melihat antrean poli umum, mencatat pemeriksaan awal, menentukan rujukan/resep. |
+| Petugas Lab | Melihat rujukan lab, menginput hasil lab, dan melampirkan file hasil. |
+| Petugas Radiologi | Melihat rujukan radiologi, menginput hasil radiologi, dan melampirkan file hasil. |
+| Dokter Spesialis | Melihat rujukan spesialis, memberi analisa, diagnosa akhir, dan tindakan akhir. |
+| Apoteker | Melihat resep, menyiapkan obat, dan menyelesaikan kunjungan. |
 
-### Frontend (React 19, Vite, Tailwind CSS 4, Zustand)
-- [x] Scaffolding project React dengan Vite.
-- [x] Konfigurasi Tailwind CSS dan instalasi dependensi utama (`axios`, `framer-motion`, `lucide-react`, `react-router-dom`, `zustand`).
-- [x] Struktur folder berdasarkan role (`src/pages/admin`, `apotek`, `dokter-spesialis`, dll).
-- [x] Pembuatan halaman statis `Login.tsx`.
-- [ ] **Pending**: Setup Axios interceptor untuk menyisipkan token Auth.
-- [ ] **Pending**: Pembuatan state management Zustand untuk Auth dan Data Antrean.
-- [ ] **Pending**: Pembuatan sistem Protected Routes berdasarkan Role user.
-- [ ] **Pending**: Pembuatan antarmuka dashboard dinamis untuk masing-masing role.
+## 4. Scope Produk
 
----
+### 4.1 Dalam Scope
 
-## 5. Ide dan Solusi Pengembangan (Development Guidelines)
+- Login dan session/token authentication.
+- Role-based access control.
+- Pendaftaran pasien dan kunjungan.
+- Master data dokter.
+- Pemeriksaan dokter umum.
+- Rujukan lab, radiologi, dan spesialis.
+- Input hasil lab/radiologi termasuk lampiran.
+- Pemeriksaan dokter spesialis.
+- Resep obat.
+- Penyelesaian resep dan kunjungan di apotek.
 
-Bagian ini adalah panduan teknis bagi AI dan Developer terkait bagaimana fitur harus dikembangkan.
+### 4.2 Di Luar Scope Saat Ini
 
-### A. Panduan Pengembangan Backend
-1. **Autentikasi & Keamanan**:
-   - Implementasikan autentikasi menggunakan **Laravel Sanctum**. Login via endpoint `/api/login` mengembalikan `token`, `user details`, dan `role`.
-   - Lindungi rute API menggunakan middleware `auth:sanctum`.
-   - Buat middleware khusus (misal: `RoleMiddleware`) untuk membatasi akses endpoint berdasarkan role pengguna (misal hanya `dokter_umum` yang bisa POST ke `/api/pemeriksaan-umum`).
-2. **Integritas Data (Database Transactions)**:
-   - Saat mengubah status perjalanan pasien (misal dari poli umum ke lab), proses ini melibatkan `UPDATE kunjungans` dan `INSERT pemeriksaan_labs`. Selalu gunakan `DB::transaction()` untuk mencegah data parsial tersimpan bila terjadi error.
-3. **Format Response**:
-   - Selalu kembalikan response API dalam bentuk standar, contoh:
-     ```json
-     {
-       "success": true,
-       "message": "Data berhasil disimpan",
-       "data": { ... }
-     }
-     ```
-4. **Manajemen File**:
-   - Gunakan fitur Laravel Storage (`Storage::disk('public')`) untuk menangani unggahan `file_lampiran` dari Lab dan Radiologi. Buat symlink menggunakan `php artisan storage:link`.
+- Integrasi BPJS/asuransi.
+- Kasir dan pembayaran.
+- Inventori obat lengkap.
+- Jadwal praktik dokter.
+- Rekam medis historis tingkat lanjut.
+- Notifikasi WhatsApp/SMS/email.
+- Dashboard analitik manajemen.
 
-### B. Panduan Pengembangan Frontend
-1. **API Integration & State**:
-   - Gunakan **Axios** untuk seluruh HTTP requests. Buat file `api.ts` yang memuat konfigurasi dasar (baseURL) dan *interceptors* untuk menyisipkan Bearer token otomatis.
-   - Gunakan **Zustand** secara modular (misal: `useAuthStore` untuk otentikasi, `useKunjunganStore` untuk manajemen antrean).
-2. **Role-Based Routing**:
-   - Susun `react-router-dom` dengan komponen `<ProtectedRoute allowedRoles={['admin']} />`. Jika user dengan role yang salah mencoba masuk, arahkan ke halaman `Unauthorized` atau kembalikan ke dashboard role mereka.
-3. **UI/UX & Desain Modern**:
-   - Gunakan estetika desain yang premium dan modern (misal: komponen dengan efek glassmorphism, rounded corners, dan harmonisasi warna pastel/vibrant).
-   - Wajib gunakan **Framer Motion** untuk memberikan transisi mulus saat berpindah halaman atau membuka modal.
-   - Jangan gunakan desain yang terlalu kaku atau "generic admin template". Berikan sentuhan animasi mikro (hover states, click ripples) agar sistem terasa interaktif.
-4. **Realtime UX**:
-   - Karena alur bersifat antrean (pasien pindah dari satu divisi ke divisi lain), pertimbangkan penggunaan polling (SWR / React Query) atau integrasikan WebSockets (Pusher/Laravel Reverb) agar daftar pasien otomatis diperbarui tanpa perlu user merefresh browser.
+## 5. Status Perkembangan Proyek
 
----
+### 5.1 Stack Aktual
 
-**[INSTRUKSI UNTUK AI]**
-Setiap kali diminta untuk mengembangkan fitur pada proyek ini, AI **HARUS**:
-1. Merujuk pada struktur *database* yang tertulis di PRD ini.
-2. Mengikuti standar *tech-stack* (Laravel 11, React 19, Tailwind 4, Zustand).
-3. Memberikan *code snippet* yang mementingkan UI/UX terbaik di bagian frontend (jangan asal buat div tanpa styling).
-4. Menyediakan *backend code* yang aman (menggunakan FormRequest, Transaction, dan Response yang rapi).
+- Backend: PHP `^8.3`, Laravel Framework `^13.8`, Laravel Sanctum `^4.0`, PHPUnit.
+- Frontend: React `^19.2`, TypeScript, Vite `^8`, Tailwind CSS `^4`, Axios, React Router `^7`, Framer Motion, Lucide React, Zustand.
+- API frontend saat ini mengarah ke `http://localhost:8000/api`.
+
+### 5.2 Backend yang Sudah Ada
+
+Model utama:
+
+- `User`
+- `Dokter`
+- `Kunjungan`
+- `PemeriksaanUmum`
+- `PemeriksaanLab`
+- `PemeriksaanRadiologi`
+- `PemeriksaanSpesialis`
+- `ResepObat`
+
+Controller utama:
+
+- `DokterController`
+- `KunjunganController`
+- `PemeriksaanUmumController`
+- `PemeriksaanLabController`
+- `PemeriksaanRadiologiController`
+- `PemeriksaanSpesialisController`
+- `ResepObatController`
+
+Route API utama:
+
+- `GET|POST /api/dokters`
+- `GET|POST /api/kunjungans`
+- `PATCH /api/kunjungans/{id}/status`
+- `GET|POST /api/pemeriksaan-umums`
+- `GET|POST /api/pemeriksaan-labs`
+- `GET|POST /api/pemeriksaan-radiologis`
+- `GET|POST /api/pemeriksaan-spesialis`
+- `GET|POST /api/resep-obats`
+
+### 5.3 Frontend yang Sudah Ada
+
+Halaman:
+
+- Login.
+- Dashboard admin pendaftaran.
+- Dashboard admin master dokter.
+- Dashboard dokter umum.
+- Dashboard lab.
+- Dashboard radiologi.
+- Dashboard dokter spesialis.
+- Dashboard apotek.
+
+Integrasi yang sudah berjalan sebagian:
+
+- Pendaftaran kunjungan terhubung ke API.
+- Master dokter terhubung ke API.
+- Dokter umum sudah mulai memakai data kunjungan/dokter dan submit pemeriksaan umum.
+
+### 5.4 Gap Utama
+
+1. Login masih simulasi; belum ada endpoint login/logout yang dipakai frontend.
+2. Sanctum sudah tersedia, tetapi token auth belum diterapkan penuh.
+3. Role guard frontend dan middleware backend belum aktif.
+4. Dashboard lab, radiologi, spesialis, dan apotek masih perlu integrasi API penuh.
+5. Upload lampiran lab/radiologi belum berjalan.
+6. `ResepObatController` belum sinkron dengan migration/model `resep_obats`.
+7. Beberapa endpoint dari `apiResource` terbuka walaupun method controller belum lengkap.
+8. Belum ada pagination, filter, audit log, dan automated test untuk alur bisnis.
+9. Pendaftaran pasien masih membuat password default `password`, belum aman untuk produksi.
+
+## 6. Fitur Produk
+
+### 6.1 Autentikasi dan Role
+
+- User login dengan email dan password.
+- Sistem mengembalikan token dan data user.
+- User diarahkan ke dashboard sesuai role.
+- API dan halaman dibatasi sesuai role.
+
+Status: **belum selesai**.
+
+### 6.2 Pendaftaran Kunjungan
+
+- Admin menginput nama pasien, email, dan tanggal kunjungan.
+- Sistem membuat user pasien.
+- Sistem membuat kunjungan dengan status awal `poli_umum`.
+- Kunjungan tampil pada antrean.
+
+Status: **sudah ada untuk alur dasar**.
+
+### 6.3 Master Dokter
+
+- Admin menambah dokter dengan nama, spesialis, email, dan password.
+- Sistem membuat user dokter/petugas sesuai spesialis.
+- Admin dapat melihat, mengubah, dan menghapus dokter.
+
+Status: **sudah ada untuk operasi dasar**.
+
+### 6.4 Pemeriksaan Dokter Umum
+
+- Dokter umum melihat kunjungan status `poli_umum`.
+- Dokter mencatat pemeriksaan awal, kategori penyakit, diagnosa awal, tindakan, dan rujukan.
+- Jika rujukan `lab`, status kunjungan menjadi `lab`.
+- Jika rujukan `radiologi`, status kunjungan menjadi `radiologi`.
+- Jika rujukan `spesialis`, status kunjungan menjadi `spesialis`.
+- Jika rujukan `none`, status kunjungan menjadi `apotek`.
+
+Status: **sudah ada untuk alur dasar**.
+
+### 6.5 Pemeriksaan Lab
+
+- Petugas lab melihat kunjungan status `lab`.
+- Petugas menginput jenis pemeriksaan, hasil lab, status, dan lampiran.
+- Jika selesai, status kunjungan kembali ke `poli_umum`.
+
+Status: **backend sebagian ada, frontend/upload belum selesai**.
+
+### 6.6 Pemeriksaan Radiologi
+
+- Petugas radiologi melihat kunjungan status `radiologi`.
+- Petugas menginput jenis pemeriksaan, hasil radiologi, status, dan lampiran.
+- Jika selesai, status kunjungan kembali ke `poli_umum`.
+
+Status: **backend sebagian ada, frontend/upload belum selesai**.
+
+### 6.7 Pemeriksaan Dokter Spesialis
+
+- Dokter spesialis melihat kunjungan status `spesialis`.
+- Dokter menginput analisa hasil rujukan, diagnosa akhir, dan tindakan akhir.
+- Setelah selesai, status kunjungan menjadi `apotek`.
+
+Status: **backend sebagian ada, frontend belum selesai**.
+
+### 6.8 Resep dan Apotek
+
+- Dokter umum atau dokter spesialis membuat resep.
+- Apoteker melihat daftar resep.
+- Apoteker menandai resep selesai.
+- Sistem mengubah status kunjungan menjadi `selesai`.
+
+Status: **belum stabil; perlu sinkronisasi backend dan frontend**.
+
+## 7. Flow Produk
+
+### 7.1 Flow Tanpa Rujukan
+
+1. Admin mendaftarkan pasien.
+2. Sistem membuat kunjungan status `poli_umum`.
+3. Dokter umum melakukan pemeriksaan.
+4. Dokter memilih rujukan `none`.
+5. Sistem mengubah status ke `apotek`.
+6. Dokter membuat resep.
+7. Apoteker menyelesaikan resep.
+8. Sistem mengubah status kunjungan menjadi `selesai`.
+
+### 7.2 Flow Dengan Lab
+
+1. Dokter umum memilih rujukan `lab`.
+2. Sistem mengubah status ke `lab`.
+3. Petugas lab menginput hasil.
+4. Jika selesai, sistem mengubah status kembali ke `poli_umum`.
+5. Dokter umum meninjau hasil dan menentukan tindak lanjut.
+
+### 7.3 Flow Dengan Radiologi
+
+1. Dokter umum memilih rujukan `radiologi`.
+2. Sistem mengubah status ke `radiologi`.
+3. Petugas radiologi menginput hasil.
+4. Jika selesai, sistem mengubah status kembali ke `poli_umum`.
+5. Dokter umum meninjau hasil dan menentukan tindak lanjut.
+
+### 7.4 Flow Dengan Spesialis
+
+1. Dokter umum memilih rujukan `spesialis`.
+2. Sistem mengubah status ke `spesialis`.
+3. Dokter spesialis menginput analisa, diagnosa akhir, dan tindakan akhir.
+4. Sistem mengubah status ke `apotek`.
+5. Apoteker menyelesaikan resep.
+6. Kunjungan menjadi `selesai`.
+
+## 8. Roadmap Prioritas
+
+### Prioritas 1 - Stabilkan Fondasi
+
+- Implementasi login/logout Sanctum.
+- Terapkan middleware auth dan role.
+- Sinkronkan modul resep dengan database.
+- Batasi route resource hanya ke method yang tersedia atau lengkapi method controller.
+
+### Prioritas 2 - Lengkapi Alur Klinis
+
+- Integrasi dashboard lab, radiologi, spesialis, dan apotek.
+- Tambahkan pembuatan resep dari dokter umum/spesialis.
+- Tambahkan upload lampiran lab/radiologi.
+- Tambahkan detail kunjungan lengkap.
+
+### Prioritas 3 - Kesiapan Operasional
+
+- Tambahkan filter, pencarian, dan pagination.
+- Tambahkan audit log perubahan status.
+- Tambahkan test backend untuk alur kunjungan.
+- Perbaiki proses pembuatan akun/password pasien.
+
+## 9. Success Metrics
+
+- Admin dapat membuat kunjungan baru tanpa error.
+- Dokter umum dapat memproses antrean sampai rujukan/apotek.
+- Lab/radiologi/spesialis dapat memproses pasien sesuai status.
+- Apotek dapat menyelesaikan resep dan kunjungan.
+- User tidak dapat mengakses modul di luar role-nya.
+- Status kunjungan selalu konsisten dengan tahap layanan.

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('pemeriksaan_radiologis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('kunjungan_id')->constrained('kunjungans')->onDelete('cascade');
-            $table->foreignId('petugas_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('dokter_id')->nullable()->constrained('dokters')->onDelete('set null');
             $table->string('jenis_pemeriksaan');
             $table->text('hasil_radiologi')->nullable();
             $table->string('file_lampiran')->nullable();

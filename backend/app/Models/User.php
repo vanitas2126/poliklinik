@@ -35,23 +35,8 @@ class User extends Authenticatable
         return $this->hasMany(Kunjungan::class, 'pasien_id');
     }
 
-    public function pemeriksaanUmums()
+    public function dokter()
     {
-        return $this->hasMany(PemeriksaanUmum::class, 'dokter_id');
-    }
-
-    public function pemeriksaanLabs()
-    {
-        return $this->hasMany(PemeriksaanLab::class, 'petugas_id');
-    }
-
-    public function pemeriksaanRadiologis()
-    {
-        return $this->hasMany(PemeriksaanRadiologi::class, 'petugas_id');
-    }
-
-    public function pemeriksaanSpesialis()
-    {
-        return $this->hasMany(PemeriksaanSpesialis::class, 'dokter_spesialis_id');
+        return $this->hasOne(Dokter::class, 'user_id');
     }
 }

@@ -10,6 +10,7 @@ export default function DashboardLayout() {
         </div>
         <nav className="p-4 space-y-2">
           <Link to="/admin" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Pendaftaran</Link>
+          <Link to="/admin/dokter" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Master Dokter</Link>
           <Link to="/dokter-umum" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Poli Umum</Link>
           <Link to="/lab" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Laboratorium</Link>
           <Link to="/radiologi" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Radiologi</Link>
