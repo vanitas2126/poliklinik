@@ -13,10 +13,33 @@ return new class extends Migration
     {
         Schema::create('kunjungans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pasien_id')->constrained('users')->onDelete('cascade');
+
+            $table->unsignedBigInteger('id_pasien');
+            $table->unsignedBigInteger('id_antrian')->nullable();
+
             $table->date('tanggal_kunjungan');
-            $table->enum('status_saat_ini', ['poli_umum', 'lab', 'radiologi', 'spesialis', 'apotek', 'selesai'])->default('poli_umum');
+
+            $table->enum('status_saat_ini', [
+                'poli_umum',
+                'lab',
+                'radiologi',
+                'spesialis',
+                'poli_umum_review',
+                'apotek',
+                'selesai',
+            ])->default('poli_umum');
+
             $table->timestamps();
+
+            $table->foreign('id_pasien')
+                ->references('id_pasien')
+                ->on('pasien')
+                ->onDelete('cascade');
+
+            $table->foreign('id_antrian')
+                ->references('id_antrian')
+                ->on('antrian')
+                ->nullOnDelete();
         });
     }
 

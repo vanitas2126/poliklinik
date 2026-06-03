@@ -10,43 +10,54 @@ class ResepObatController extends Controller
 {
     public function index()
     {
-        $data = ResepObat::with(['kunjungan.pasien', 'kunjungan.pemeriksaanUmums.dokter', 'kunjungan.pemeriksaanSpesialis.dokter'])->get();
-        return response()->json($data);
+        return response()->json(
+            ResepObat::with('kunjungan.pasien')
+                ->latest()
+                ->get()
+        );
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'kunjungan_id' => 'required|exists:kunjungans,id',
-            'nama_obat' => 'required|string',
-            'dosis' => 'required|string',
-            'keterangan' => 'nullable|string',
-            'status' => 'required|in:menunggu,diberikan',
+            'sumber_resep' => 'required|string',
+            'catatan_resep' => 'required|string',
+            'status' => 'nullable|in:menunggu,diproses,selesai',
         ]);
 
-        $resep = ResepObat::create($validated);
+        $resep = ResepObat::create([
+            'kunjungan_id' => $validated['kunjungan_id'],
+            'sumber_resep' => $validated['sumber_resep'],
+            'catatan_resep' => $validated['catatan_resep'],
+            'status' => $validated['status'] ?? 'menunggu',
+        ]);
 
-        if ($validated['status'] === 'diberikan') {
-            Kunjungan::where('id', $validated['kunjungan_id'])->update(['status_saat_ini' => 'selesai']);
-        }
+        Kunjungan::where('id', $validated['kunjungan_id'])->update([
+            'status_saat_ini' => 'apotek'
+        ]);
 
-        return response()->json($resep->load('kunjungan'), 201);
+        return response()->json($resep->load('kunjungan.pasien'), 201);
     }
 
     public function update(Request $request, $id)
     {
         $resep = ResepObat::findOrFail($id);
-        
+
         $validated = $request->validate([
-            'status' => 'required|in:menunggu,diberikan',
+            'status' => 'required|in:menunggu,diproses,selesai',
         ]);
 
-        $resep->update($validated);
+        $resep->update([
+            'status' => $validated['status']
+        ]);
 
-        if ($validated['status'] === 'diberikan') {
-            Kunjungan::where('id', $resep->kunjungan_id)->update(['status_saat_ini' => 'selesai']);
+        if ($validated['status'] === 'selesai') {
+            Kunjungan::where('id', $resep->kunjungan_id)->update([
+                'status_saat_ini' => 'selesai'
+            ]);
         }
 
-        return response()->json($resep->load('kunjungan'));
+        return response()->json($resep->load('kunjungan.pasien'));
     }
 }

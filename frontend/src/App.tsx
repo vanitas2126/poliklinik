@@ -14,7 +14,7 @@ import DokterUmumDashboard from "./pages/dokter-umum/DokterUmumDashboard";
 import LabDashboard from "./pages/lab/LabDashboard";
 import RadiologiDashboard from "./pages/radiologi/RadiologiDashboard";
 import DokterSpesialisDashboard from "./pages/dokter-spesialis/DokterSpesialisDashboard";
-import ApotekDashboard from "./pages/apotek/ApotekDashboard";
+import RiwayatPasienDashboard from "./pages/riwayat/RiwayatPasienDashboard.tsx";
 
 function AppRouter() {
   return (
@@ -33,7 +33,7 @@ function AppRouter() {
           <Route path="lab" element={<LabDashboard />} />
           <Route path="radiologi" element={<RadiologiDashboard />} />
           <Route path="dokter-spesialis" element={<DokterSpesialisDashboard />} />
-          <Route path="apotek" element={<ApotekDashboard />} />
+          <Route path="riwayat-pasien" element={<RiwayatPasienDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

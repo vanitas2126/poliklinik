@@ -27,7 +27,11 @@ class PemeriksaanRadiologiController extends Controller
         $pemeriksaan = PemeriksaanRadiologi::create($validated);
 
         if ($validated['status'] === 'selesai') {
-            Kunjungan::where('id', $validated['kunjungan_id'])->update(['status_saat_ini' => 'poli_umum']);
+            $kunjungan = Kunjungan::findOrFail($validated['kunjungan_id']);
+
+            $kunjungan->update([
+                'status_saat_ini' => 'poli_umum_review'
+            ]);
         }
 
         return response()->json($pemeriksaan->load(['kunjungan', 'dokter']), 201);
@@ -36,7 +40,7 @@ class PemeriksaanRadiologiController extends Controller
     public function update(Request $request, $id)
     {
         $pemeriksaan = PemeriksaanRadiologi::findOrFail($id);
-        
+
         $validated = $request->validate([
             'hasil_radiologi' => 'required|string',
             'status' => 'required|in:menunggu,selesai',
@@ -45,7 +49,11 @@ class PemeriksaanRadiologiController extends Controller
         $pemeriksaan->update($validated);
 
         if ($validated['status'] === 'selesai') {
-            Kunjungan::where('id', $pemeriksaan->kunjungan_id)->update(['status_saat_ini' => 'poli_umum']);
+            $kunjungan = Kunjungan::findOrFail($pemeriksaan->kunjungan_id);
+
+            $kunjungan->update([
+                'status_saat_ini' => 'poli_umum_review'
+            ]);
         }
 
         return response()->json($pemeriksaan->load(['kunjungan', 'dokter']));

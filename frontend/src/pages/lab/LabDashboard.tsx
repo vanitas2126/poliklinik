@@ -4,18 +4,25 @@ import { Activity, FlaskConical, ArrowRight, CheckCircle, X } from 'lucide-react
 import api from '../../api';
 
 interface Pasien {
-  id: number;
-  name: string;
+  id_pasien: number;
+  nomor_rm?: string;
+  nama_pasien: string;
+  nik?: string;
+  jenis_kelamin?: string;
+  tanggal_lahir?: string;
+  alamat?: string;
+  no_hp?: string;
+  keluhan?: string;
 }
 
 interface Kunjungan {
   id: number;
-  pasien_id: number;
+  id_pasien: number;
+  id_antrian?: number;
   tanggal_kunjungan: string;
   status_saat_ini: string;
-  pasien: Pasien;
+  pasien: Pasien | null;
 }
-
 interface Dokter {
   id: number;
   nama_dokter: string;
@@ -26,12 +33,28 @@ export default function LabDashboard() {
   const [antrean, setAntrean] = useState<Kunjungan[]>([]);
   const [petugas, setPetugas] = useState<Dokter[]>([]);
   const [selectedKunjungan, setSelectedKunjungan] = useState<Kunjungan | null>(null);
-  const [formData, setFormData] = useState({
-    dokter_id: '',
-    jenis_pemeriksaan: '',
-    hasil_lab: '',
-    status: 'selesai',
-  });
+const [formData, setFormData] = useState({
+  dokter_id: '',
+  hb: '',
+  leukosit: '',
+  trombosit: '',
+  hematokrit: '',
+  widal: 'Negatif',
+  keterangan: '',
+});
+const handlePeriksa = (kunjungan: Kunjungan) => {
+  setSelectedKunjungan(kunjungan);
+
+setFormData({
+  dokter_id: petugas.length > 0 ? petugas[0].id.toString() : '',
+  hb: '',
+  leukosit: '',
+  trombosit: '',
+  hematokrit: '',
+  widal: 'Negatif',
+  keterangan: '',
+});
+};
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -51,32 +74,38 @@ export default function LabDashboard() {
     }
   };
 
-  const handlePeriksa = (kunjungan: Kunjungan) => {
-    setSelectedKunjungan(kunjungan);
-    setFormData({
-      dokter_id: petugas.length > 0 ? petugas[0].id.toString() : '',
-      jenis_pemeriksaan: '',
-      hasil_lab: '',
-      status: 'selesai',
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedKunjungan) return;
     
     setLoading(true);
-    try {
-      await api.post('/pemeriksaan-labs', {
-        kunjungan_id: selectedKunjungan.id,
-        ...formData
-      });
+try {
+const hasilLab = `Hemoglobin (Hb): ${formData.hb || '-'} | Normal: 12 - 15 g/dL
+Leukosit: ${formData.leukosit || '-'} | Normal: 4.000 - 11.000
+Trombosit: ${formData.trombosit || '-'} | Normal: 150.000 - 450.000
+Hematokrit: ${formData.hematokrit || '-'} | Normal: 40 - 54 %
+Widal Test: ${formData.widal || '-'} | Normal: Negatif
+
+Keterangan:
+${formData.keterangan || '-'}`;
+  await api.post('/pemeriksaan-labs', {
+    kunjungan_id: selectedKunjungan.id,
+    id_pasien: selectedKunjungan.id_pasien,
+    dokter_id: formData.dokter_id,
+    hasil_lab: hasilLab,
+    status: 'selesai',
+  });
       setSelectedKunjungan(null);
       fetchData();
-    } catch (error) {
-      console.error('Failed to submit hasil lab', error);
-      alert('Gagal menyimpan hasil laboratorium.');
-    } finally {
+    } catch (error: any) {
+  console.error(error);
+
+  alert(
+    error?.response?.data?.message ||
+    JSON.stringify(error?.response?.data) ||
+    'Gagal menyimpan hasil laboratorium.'
+  );
+} finally {
       setLoading(false);
     }
   };
@@ -109,7 +138,7 @@ export default function LabDashboard() {
                   onClick={() => handlePeriksa(k)}
                 >
                   <div>
-                    <p className="font-semibold text-slate-800 group-hover:text-purple-700">{k.pasien.name}</p>
+                    <p className="font-semibold text-slate-800 group-hover:text-purple-700">{k.pasien?.nama_pasien || 'Pasien Tidak Ditemukan'}</p>
                     <p className="text-xs text-slate-500">Antrean #{k.id}</p>
                   </div>
                   <ArrowRight size={18} className="text-slate-300 group-hover:text-purple-500" />
@@ -121,17 +150,50 @@ export default function LabDashboard() {
 
         <div className="lg:col-span-2">
           {selectedKunjungan ? (
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
+              >
+              <div className="relative mb-6 pb-4 border-b border-slate-100">
+                <button
+                  onClick={() => setSelectedKunjungan(null)}
+                  className="absolute top-0 right-0 text-slate-400 hover:text-red-500"
+                >
+                  <X size={28} />
+                </button>
+
                 <div>
                   <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <FlaskConical className="text-purple-500" /> Hasil Pemeriksaan Lab
+                    <FlaskConical className="text-purple-500" />
+                    Hasil Pemeriksaan Lab
                   </h2>
-                  <p className="text-slate-500 text-sm mt-1">Pasien: <span className="font-semibold text-slate-700">{selectedKunjungan.pasien.name}</span></p>
-                </div>
-                <button onClick={() => setSelectedKunjungan(null)} className="text-slate-400 hover:text-red-500"><X size={24} /></button>
-              </div>
 
+                  <p className="text-slate-500 text-sm mt-1">
+                    Pasien:{' '}
+                    <span className="font-semibold text-slate-700">
+                      {selectedKunjungan.pasien?.nama_pasien || 'Pasien Tidak Ditemukan'}
+                    </span>
+                  </p>
+
+                  <div className="mt-3 w-fit bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                    <p className="text-sm">
+                      <span className="font-semibold">No RM:</span>{' '}
+                      {selectedKunjungan.pasien?.nomor_rm || '-'}
+                    </p>
+
+                    <p className="text-sm">
+                      <span className="font-semibold">No HP:</span>{' '}
+                      {selectedKunjungan.pasien?.no_hp || '-'}
+                    </p>
+
+                    <p className="text-sm">
+                      <span className="font-semibold">Keluhan Awal:</span>{' '}
+                      {selectedKunjungan.pasien?.keluhan || '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Petugas Pemeriksa</label>
@@ -142,15 +204,131 @@ export default function LabDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Jenis Pemeriksaan Lab</label>
-                  <input type="text" required value={formData.jenis_pemeriksaan} onChange={e => setFormData({...formData, jenis_pemeriksaan: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Misal: Darah Lengkap, Urine Rutin..." />
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Hasil Pemeriksaan</label>
-                  <textarea required rows={4} value={formData.hasil_lab} onChange={e => setFormData({...formData, hasil_lab: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Catat hasil pemeriksaan secara detail..." />
-                </div>
+                    <div className="overflow-x-auto border rounded-xl">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-100">
+                          <tr>
+                            <th className="p-3 text-left">Parameter</th>
+                            <th className="p-3 text-left">Hasil Pasien</th>
+                            <th className="p-3 text-left">Nilai Normal</th>
+                          </tr>
+                        </thead>
 
+                        <tbody>
+                          <tr>
+                            <td className="p-3">Hemoglobin (Hb)</td>
+                            <td className="p-3">
+                              <input
+                                type="text"
+                                value={formData.hb}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    hb: e.target.value,
+                                  })
+                                }
+                                className="input input-bordered w-full"
+                              />
+                            </td>
+                            <td className="p-3">12 - 15 g/dL</td>
+                          </tr>
+
+                          <tr>
+                            <td className="p-3">Leukosit</td>
+                            <td className="p-3">
+                              <input
+                                type="text"
+                                value={formData.leukosit}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    leukosit: e.target.value,
+                                  })
+                                }
+                                className="input input-bordered w-full"
+                              />
+                            </td>
+                            <td className="p-3">4.000 - 11.000</td>
+                          </tr>
+
+                          <tr>
+                            <td className="p-3">Trombosit</td>
+                            <td className="p-3">
+                              <input
+                                type="text"
+                                value={formData.trombosit}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    trombosit: e.target.value,
+                                  })
+                                }
+                                className="input input-bordered w-full"
+                              />
+                            </td>
+                            <td className="p-3">150.000 - 450.000</td>
+                          </tr>
+
+                          <tr>
+                            <td className="p-3">Hematokrit</td>
+                            <td className="p-3">
+                              <input
+                                type="text"
+                                value={formData.hematokrit}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    hematokrit: e.target.value,
+                                  })
+                                }
+                                className="input input-bordered w-full"
+                              />
+                            </td>
+                            <td className="p-3">40 - 54 %</td>
+                          </tr>
+
+                          <tr>
+                            <td className="p-3">Widal Test</td>
+                            <td className="p-3">
+                              <select
+                                value={formData.widal}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    widal: e.target.value,
+                                  })
+                                }
+                                className="select select-bordered w-full"
+                              >
+                                <option>Negatif</option>
+                                <option>Positif</option>
+                              </select>
+                            </td>
+                            <td className="p-3">Negatif</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Keterangan
+                    </label>
+
+                    <textarea
+                      rows={3}
+                      value={formData.keterangan}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          keterangan: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+                      placeholder="Tambahkan keterangan hasil pemeriksaan..."
+                    />
+                  </div>
                 <button type="submit" disabled={loading} className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all disabled:opacity-70 flex justify-center items-center gap-2">
                   {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><CheckCircle size={20} /> Simpan Hasil & Kembalikan ke Poli Umum</>}
                 </button>

@@ -3,15 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['pasien_id', 'tanggal_kunjungan', 'status_saat_ini'])]
+#[Fillable([
+    'id_pasien',
+    'id_antrian',
+    'tanggal_kunjungan',
+    'status_saat_ini',
+])]
 class Kunjungan extends Model
 {
     public function pasien()
     {
-        return $this->belongsTo(User::class, 'pasien_id');
+        return $this->belongsTo(Pasien::class, 'id_pasien', 'id_pasien');
+    }
+
+    public function antrian()
+    {
+        return $this->belongsTo(Antrian::class, 'id_antrian', 'id_antrian');
     }
 
     public function pemeriksaanUmum()

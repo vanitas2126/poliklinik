@@ -4,11 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-
-#[Fillable(['kunjungan_id', 'dokter_id', 'jenis_pemeriksaan', 'hasil_radiologi', 'file_lampiran', 'status'])]
 class PemeriksaanRadiologi extends Model
 {
+    protected $fillable = [
+        'kunjungan_id',
+        'dokter_id',
+        'jenis_pemeriksaan',
+        'hasil_radiologi',
+        'file_lampiran',
+        'status',
+    ];
+
     public function kunjungan()
     {
         return $this->belongsTo(Kunjungan::class, 'kunjungan_id');
