@@ -143,6 +143,25 @@ export default function DokterSpesialisDashboard() {
         ...formData,
       });
 
+      await api.post('/riwayats', {
+  kunjungan_id: selectedKunjungan.id,
+
+  biaya_umum: 50000,
+
+  biaya_lab: hasilLab ? 75000 : 0,
+
+  biaya_radiologi: hasilRadiologi ? 100000 : 0,
+
+  biaya_spesialis: 120000,
+
+  total_biaya:
+    50000 +
+    (hasilLab ? 75000 : 0) +
+    (hasilRadiologi ? 100000 : 0) +
+    120000,
+
+});
+
       setSuccessMessage('Pemeriksaan spesialis berhasil disimpan.');
 
       setTimeout(() => {

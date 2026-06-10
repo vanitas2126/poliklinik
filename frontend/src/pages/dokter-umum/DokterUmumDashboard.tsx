@@ -245,25 +245,20 @@ await api.post('/resep-obats', {
 };
 
 
-const handleSimpanInvoice = async () => {
+const handleSimpanRiwayat = async () => {
   if (!selectedKunjungan) return;
 
   try {
-    await api.post('/invoices', {
+    await api.post('/riwayats', {
       kunjungan_id: selectedKunjungan.id,
-      jenis_layanan: 'Pemeriksaan Poli Umum',
-      keluhan: formData.pemeriksaan_awal,
-      diagnosa: formData.diagnosa_awal,
-      tindakan: formData.tindakan || '-',
-      kategori_penyakit: formData.kategori_penyakit,
+      biaya_umum: 50000,
+      biaya_lab: 0,
+      biaya_radiologi: 0,
+      biaya_spesialis: 0,
       total_biaya: 50000,
-      status: 'belum_dibayar',
     });
 
     setSuccessMessage('Catatan diagnosa berhasil disimpan.');
-
-    // JANGAN pakai ini:
-    // setSelectedKunjungan(null);
 
     fetchData();
 
@@ -272,7 +267,7 @@ const handleSimpanInvoice = async () => {
     }, 2500);
   } catch (error: any) {
     console.error(error.response?.data || error);
-    alert(error.response?.data?.message || 'Gagal menyimpan invoice.');
+    alert(error.response?.data?.message || 'Gagal menyimpan riwayat.');
   }
 };
 
@@ -508,7 +503,7 @@ const handleSimpanInvoice = async () => {
 
                     <button
                       type="button"
-                      onClick={handleSimpanInvoice}
+                      onClick={handleSimpanRiwayat}
                       className="py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium"
                     >
                       Simpan Diagnosa

@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-     Schema::create('invoices', function (Blueprint $table) {
+     Schema::create('riwayats', function (Blueprint $table) {
     $table->id();
     $table->foreignId('kunjungan_id')->constrained('kunjungans')->onDelete('cascade');
-    $table->string('jenis_layanan');
+    $table->integer('biaya_umum')->default(0);
+    $table->integer('biaya_lab')->default(0);
+    $table->integer('biaya_radiologi')->default(0);
+    $table->integer('biaya_spesialis')->default(0);
     $table->integer('total_biaya');
-    $table->string('status')->default('belum_dibayar');
     $table->timestamps();
 });
     }
@@ -26,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('invoices');
+        Schema::dropIfExists('riwayats');
     }
 };

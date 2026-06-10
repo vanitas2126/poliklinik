@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Calendar, Activity, X } from 'lucide-react';
 import api from '../../api';
+import axios from 'axios';
 
 interface Pasien {
   id_pasien: number;
@@ -148,15 +149,32 @@ const filteredKunjungans = kunjungans.filter((item) =>
 //     console.error(error);
 //   }
 // };
-  const fetchKunjungans = async () => {
-    try {
-      const response = await api.get('/kunjungans'); 
-      // axios.get(`${REGISTRASI_API}/antrian`)
-      setKunjungans(response.data);
-    } catch (error) {
-      console.error('Failed to fetch kunjungans', error);
-    }
-  };
+const fetchKunjungans = async () => {
+  try {
+    const pasienRes = await axios.get(
+      'http://192.168.0.101:3001/api/pasien'
+    );
+
+    const antrianRes = await axios.get(
+      'http://192.168.0.101:3001/api/antrian'
+    );
+
+    console.log('Pasien:', pasienRes.data);
+    console.log('Antrian:', antrianRes.data);
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+  // const fetchKunjungans = async () => {
+  //   try {
+  //     const response = await api.get('/kunjungans'); 
+  //     // axios.get(`${REGISTRASI_API}/antrian`)
+  //     setKunjungans(response.data);
+  //   } catch (error) {
+  //     console.error('Failed to fetch kunjungans', error);
+  //   }
+  // };
 
   return (
     <motion.div

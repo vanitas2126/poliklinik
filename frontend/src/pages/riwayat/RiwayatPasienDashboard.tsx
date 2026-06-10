@@ -10,62 +10,74 @@ export default function RiwayatPasienDashboard() {
     fetchRiwayat();
   }, []);
 
-  const fetchRiwayat = async () => {
-    try {
-      const [umumRes, spesialisRes, labRes, radiologiRes] = await Promise.all([
+const fetchRiwayat = async () => {
+  try {
+    const [riwayatRes, umumRes, spesialisRes, labRes, radiologiRes] =
+      await Promise.all([
+        api.get('/riwayats'),
         api.get('/pemeriksaan-umums'),
         api.get('/pemeriksaan-spesialis'),
         api.get('/pemeriksaan-labs'),
         api.get('/pemeriksaan-radiologis'),
       ]);
 
-      const getLab = (kunjunganId: number) =>
-        labRes.data.find((lab: any) => lab.kunjungan_id === kunjunganId);
+    const getUmum = (kunjunganId: number) =>
+      umumRes.data.find(
+        (item: any) => Number(item.kunjungan_id) === Number(kunjunganId)
+      );
 
-      const getRadiologi = (kunjunganId: number) =>
-        radiologiRes.data.find((rad: any) => rad.kunjungan_id === kunjunganId);
+    const getSpesialis = (kunjunganId: number) =>
+      spesialisRes.data.find(
+        (item: any) => Number(item.kunjungan_id) === Number(kunjunganId)
+      );
 
-      const umum = umumRes.data
-        .filter((item: any) =>
-          ['apotek', 'selesai'].includes(item.kunjungan?.status_saat_ini)
-        )
-        .map((item: any) => {
-          const lab = getLab(item.kunjungan_id);
-          const radiologi = getRadiologi(item.kunjungan_id);
+    const getLab = (kunjunganId: number) =>
+      labRes.data.find(
+        (item: any) => Number(item.kunjungan_id) === Number(kunjunganId)
+      );
 
-          return {
-            ...item,
-            sumber: 'Poli Umum',
-            hasil_lab: lab?.hasil_lab || null,
-            jenis_lab: lab?.jenis_pemeriksaan || null,
-            hasil_radiologi: radiologi?.hasil_radiologi || null,
-            jenis_radiologi: radiologi?.jenis_pemeriksaan || null,
-          };
-        });
+    const getRadiologi = (kunjunganId: number) =>
+      radiologiRes.data.find(
+        (item: any) => Number(item.kunjungan_id) === Number(kunjunganId)
+      );
 
-      const spesialis = spesialisRes.data
-        .filter((item: any) =>
-          ['apotek', 'selesai'].includes(item.kunjungan?.status_saat_ini)
-        )
-        .map((item: any) => {
-          const lab = getLab(item.kunjungan_id);
-          const radiologi = getRadiologi(item.kunjungan_id);
+    const dataRiwayat = riwayatRes.data.map((item: any) => {
+      const kunjunganId = Number(item.kunjungan_id);
 
-          return {
-            ...item,
-            sumber: 'Poli Spesialis',
-            hasil_lab: lab?.hasil_lab || null,
-            jenis_lab: lab?.jenis_pemeriksaan || null,
-            hasil_radiologi: radiologi?.hasil_radiologi || null,
-            jenis_radiologi: radiologi?.jenis_pemeriksaan || null,
-          };
-        });
+      const umum = getUmum(kunjunganId);
+      const spesialis = getSpesialis(kunjunganId);
+      const lab = getLab(kunjunganId);
+      const radiologi = getRadiologi(kunjunganId);
 
-      setRiwayat([...umum, ...spesialis]);
-    } catch (error) {
-      console.error('Gagal mengambil riwayat pasien', error);
-    }
-  };
+      return {
+        ...item,
+        sumber: spesialis ? 'Poli Spesialis' : 'Poli Umum',
+        kunjungan: item.kunjungan,
+
+        pemeriksaan_awal: umum?.pemeriksaan_awal || '-',
+        diagnosa_awal: umum?.diagnosa_awal || '-',
+        tindakan: umum?.tindakan || '-',
+        kategori_penyakit: umum?.kategori_penyakit || '-',
+
+        analisa_hasil_rujukan: spesialis?.analisa_hasil_rujukan || '-',
+        diagnosa_akhir: spesialis?.diagnosa_akhir || '-',
+        tindakan_akhir: spesialis?.tindakan_akhir || '-',
+
+        hasil_lab: lab?.hasil_lab || null,
+        jenis_lab: lab?.jenis_pemeriksaan || null,
+
+        hasil_radiologi: radiologi?.hasil_radiologi || null,
+        jenis_radiologi: radiologi?.jenis_pemeriksaan || null,
+
+        tagihan: item,
+      };
+    });
+
+    setRiwayat(dataRiwayat);
+  } catch (error) {
+    console.error('Gagal mengambil riwayat pasien', error);
+  }
+};
 
   const getPasien = (item: any) => item.kunjungan?.pasien || {};
 
@@ -318,6 +330,41 @@ export default function RiwayatPasienDashboard() {
       `
       : ''
   }
+  ${
+  item.tagihan
+    ? `
+      <h2 class="section-title">Riwayat Tagihan</h2>
+
+      <div class="grid">
+        <div class="card">
+          <div class="label">Biaya Poli Umum</div>
+          <div class="value">Rp ${Number(item.tagihan.biaya_umum || 0).toLocaleString('id-ID')}</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Biaya Laboratorium</div>
+          <div class="value">Rp ${Number(item.tagihan.biaya_lab || 0).toLocaleString('id-ID')}</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Biaya Radiologi</div>
+          <div class="value">Rp ${Number(item.tagihan.biaya_radiologi || 0).toLocaleString('id-ID')}</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Biaya Poli Spesialis</div>
+          <div class="value">Rp ${Number(item.tagihan.biaya_spesialis || 0).toLocaleString('id-ID')}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">Total Biaya</div>
+        <div class="value">Rp ${Number(item.tagihan.total_biaya || 0).toLocaleString('id-ID')}</div>
+      </div>
+
+    `
+    : ''
+}
 
   <div class="footer">
     Dokumen ini merupakan riwayat pemeriksaan pasien dari ${item.sumber}.
@@ -554,7 +601,50 @@ export default function RiwayatPasienDashboard() {
                     )}
                   </div>
                 )}
+                {item.tagihan && (
+  <div className="mt-4 bg-emerald-50 rounded-xl border border-emerald-100 p-4">
+    <p className="font-semibold text-emerald-700 mb-3">
+      Riwayat Tagihan
+    </p>
 
+    <div className="grid md:grid-cols-2 gap-3 text-sm">
+      <div className="flex justify-between bg-white rounded-lg p-3">
+        <span>Poli Umum</span>
+        <span className="font-semibold">
+          Rp {Number(item.tagihan.biaya_umum || 0).toLocaleString('id-ID')}
+        </span>
+      </div>
+
+      <div className="flex justify-between bg-white rounded-lg p-3">
+        <span>Laboratorium</span>
+        <span className="font-semibold">
+          Rp {Number(item.tagihan.biaya_lab || 0).toLocaleString('id-ID')}
+        </span>
+      </div>
+
+      <div className="flex justify-between bg-white rounded-lg p-3">
+        <span>Radiologi</span>
+        <span className="font-semibold">
+          Rp {Number(item.tagihan.biaya_radiologi || 0).toLocaleString('id-ID')}
+        </span>
+      </div>
+
+      <div className="flex justify-between bg-white rounded-lg p-3">
+        <span>Poli Spesialis</span>
+        <span className="font-semibold">
+          Rp {Number(item.tagihan.biaya_spesialis || 0).toLocaleString('id-ID')}
+        </span>
+      </div>
+    </div>
+
+    <div className="mt-3 flex justify-between bg-emerald-600 text-white rounded-xl p-3 font-bold">
+      <span>Total Biaya</span>
+      <span>
+        Rp {Number(item.tagihan.total_biaya || 0).toLocaleString('id-ID')}
+      </span>
+    </div>
+  </div>
+)}
                 <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
                   <Stethoscope size={16} />
                   Pemeriksaan {item.sumber}
