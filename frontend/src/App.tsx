@@ -11,10 +11,9 @@ import Login from "./pages/Login";
 import PendaftaranDashboard from "./pages/admin/PendaftaranDashboard";
 import MasterDokter from "./pages/admin/MasterDokter";
 import DokterUmumDashboard from "./pages/dokter-umum/DokterUmumDashboard";
-import LabDashboard from "./pages/lab/LabDashboard";
-import RadiologiDashboard from "./pages/radiologi/RadiologiDashboard";
 import DokterSpesialisDashboard from "./pages/dokter-spesialis/DokterSpesialisDashboard";
 import RiwayatPasienDashboard from "./pages/riwayat/RiwayatPasienDashboard.tsx";
+import RiwayatObatPasienDashboard from "./pages/riwayat/RiwayatObatPasienDashboard.tsx";
 
 function AppRouter() {
   return (
@@ -30,10 +29,9 @@ function AppRouter() {
           <Route path="admin" element={<PendaftaranDashboard />} />
           <Route path="admin/dokter" element={<MasterDokter />} />
           <Route path="dokter-umum" element={<DokterUmumDashboard />} />
-          <Route path="lab" element={<LabDashboard />} />
-          <Route path="radiologi" element={<RadiologiDashboard />} />
           <Route path="dokter-spesialis" element={<DokterSpesialisDashboard />} />
           <Route path="riwayat-pasien" element={<RiwayatPasienDashboard />} />
+          <Route path="riwayat-obat" element={<RiwayatObatPasienDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

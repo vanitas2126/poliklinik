@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Stethoscope, ArrowRight, CheckCircle, FileText, X } from 'lucide-react';
+import { Activity, Stethoscope, ArrowRight, CheckCircle, X } from 'lucide-react';
 import api from '../../api';
+import axios from 'axios';
+
 
 interface Pasien {
   id_pasien: number;
@@ -29,27 +31,13 @@ interface Dokter {
   spesialis: string;
 }
 
-interface PemeriksaanLab {
-  id: number;
-  kunjungan_id: number;
-  status: string;
-  hasil_lab?: string;
-}
-
-interface PemeriksaanRadiologi {
-  id: number;
-  kunjungan_id: number;
-  status: string;
-  hasil_radiologi?: string;
-}
-
 export default function DokterUmumDashboard() {
   const [antrean, setAntrean] = useState<Kunjungan[]>([]);
   const [dokters, setDokters] = useState<Dokter[]>([]);
-  const [labs, setLabs] = useState<PemeriksaanLab[]>([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [isResepOpen, setIsResepOpen] = useState(false);
   const [resepList, setResepList] = useState([
+    
   {
     obat: 'Paracetamol 500mg',
     dosis: '3x sehari',
@@ -58,8 +46,8 @@ export default function DokterUmumDashboard() {
     jumlah: '10 tablet',
   },
 ]);
-  const [radiologis, setRadiologis] = useState<PemeriksaanRadiologi[]>([]);
   const [selectedKunjungan, setSelectedKunjungan] = useState<Kunjungan | null>(null);
+  const [confirmSpesialisOpen, setConfirmSpesialisOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     dokter_id: '',
@@ -70,81 +58,43 @@ export default function DokterUmumDashboard() {
     rujukan: 'none',
   });
 
-  const [loading, setLoading] = useState(false);
+  const REGISTRASI_API = 'http://192.168.0.101:3001/api/antrian';
 
-  const sudahLab = selectedKunjungan
-    ? labs.some(
-        (lab) =>
-          lab.kunjungan_id === selectedKunjungan.id &&
-          lab.status === 'selesai'
+useEffect(() => {
+  fetchData();
+}, []);
+
+const fetchData = async () => {
+  try {
+    const [kRes, dRes] = await Promise.all([
+      api.get('/kunjungans'),
+      api.get('/dokters'),
+    ]);
+
+    console.log('DATA LOCAL:', kRes.data);
+
+
+//     ===== HARI H PAKAI API REGISTRASI =====
+    // const antrianRes = await axios.get(`${REGISTRASI_API}/antrian`);
+    // console.log('DATA REGISTRASI:', antrianRes.data);
+    // setAntrean(antrianRes.data);
+//     ======================================
+
+        setAntrean(
+  kRes.data.filter((k: Kunjungan) =>
+    ['poli_umum', 'poli_umum_review'].includes(k.status_saat_ini)
+  )
+);
+
+    setDokters(
+      dRes.data.filter(
+        (d: Dokter) => d.spesialis.toLowerCase() === 'umum'
       )
-    : false;
-
-  const sudahRadiologi = selectedKunjungan
-    ? radiologis.some(
-        (radiologi) =>
-          radiologi.kunjungan_id === selectedKunjungan.id &&
-          radiologi.status === 'selesai'
-      )
-    : false;
-
-  const hasilLab = selectedKunjungan
-    ? labs.find(
-        (lab) =>
-          lab.kunjungan_id === selectedKunjungan.id &&
-          lab.status === 'selesai'
-      )
-    : null;
-
-  const hasilRadiologi = selectedKunjungan
-    ? radiologis.find(
-        (radiologi) =>
-          radiologi.kunjungan_id === selectedKunjungan.id &&
-          radiologi.status === 'selesai'
-      )
-    : null;
-
-  const rujukanOptions = [
-    ...(!sudahLab ? [{ id: 'lab', label: 'Laboratorium' }] : []),
-
-    ...(!sudahRadiologi ? [{ id: 'radiologi', label: 'Radiologi' }] : []),
-
-    { id: 'spesialis', label: 'Poli Spesialis' },
-  ];
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [kRes, dRes, labRes, radRes] = await Promise.all([
-        api.get('/kunjungans'),
-        // axios.get(`${REGISTRASI_API}/antrian`),
-        api.get('/dokters'),
-        api.get('/pemeriksaan-labs'),
-        api.get('/pemeriksaan-radiologis'),
-      ]);
-
-      setAntrean(
-        kRes.data.filter((k: Kunjungan) =>
-          ['poli_umum', 'poli_umum_review'].includes(k.status_saat_ini)
-        )
-      );
-
-      setDokters(
-        dRes.data.filter(
-          (d: Dokter) => d.spesialis.toLowerCase() === 'umum'
-        )
-      );
-
-      setLabs(labRes.data);
-      setRadiologis(radRes.data);
-    } catch (error) {
-      console.error('Failed to fetch data', error);
-    }
-  };
-
+    );
+  } catch (error) {
+    console.error('Failed to fetch data', error);
+  }
+};
   const handlePeriksa = (kunjungan: Kunjungan) => {
     setSelectedKunjungan(kunjungan);
     setFormData({
@@ -161,8 +111,7 @@ export default function DokterUmumDashboard() {
     e.preventDefault();
 
     if (!selectedKunjungan) return;
-
-    setLoading(true);
+   
 
     try {
 await api.post('/pemeriksaan-umums', {
@@ -193,8 +142,7 @@ fetchData();
     } catch (error) {
       console.error('Failed to submit pemeriksaan', error);
       alert('Gagal menyimpan hasil pemeriksaan.');
-    } finally {
-      setLoading(false);
+    } finally { 
     }
   };
 
@@ -244,7 +192,6 @@ await api.post('/resep-obats', {
   }
 };
 
-
 const handleSimpanRiwayat = async () => {
   if (!selectedKunjungan) return;
 
@@ -270,6 +217,36 @@ const handleSimpanRiwayat = async () => {
     alert(error.response?.data?.message || 'Gagal menyimpan riwayat.');
   }
 };
+
+const handleRujukSpesialis = async () => {
+  if (!selectedKunjungan) return;
+
+  try {
+    setFormData({
+      ...formData,
+      kategori_penyakit: 'berat',
+      rujukan: 'spesialis',
+    });
+
+    await api.patch(`/kunjungans/${selectedKunjungan.id}/status`, {
+      status_saat_ini: 'spesialis',
+    });
+
+    setConfirmSpesialisOpen(false);
+    setSelectedKunjungan(null);
+    setSuccessMessage('Pasien berhasil dirujuk ke Poli Spesialis.');
+
+    fetchData();
+
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 2500);
+  } catch (error: any) {
+    console.error(error.response?.data || error);
+    alert('Gagal merujuk pasien ke Poli Spesialis.');
+  }
+};
+
 
   return (
     <motion.div
@@ -356,11 +333,6 @@ const handleSimpanRiwayat = async () => {
                     </span>
                   </p>
 
-                  <p className="text-xs text-slate-500 mt-1">
-                    Lab: {sudahLab ? 'Sudah' : 'Belum'} | Radiologi:{' '}
-                    {sudahRadiologi ? 'Sudah' : 'Belum'}
-                  </p>
-
                   <div className="mt-3 w-fit bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                     <p className="text-sm">
                       <span className="font-semibold">No RM:</span>{' '}
@@ -411,12 +383,20 @@ const handleSimpanRiwayat = async () => {
                     </label>
                     <select
                       value={formData.kategori_penyakit}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          kategori_penyakit: e.target.value,
-                        })
-                      }
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          if (value === 'berat') {
+                            setConfirmSpesialisOpen(true);
+                            return;
+                          }
+
+                          setFormData({
+                            ...formData,
+                            kategori_penyakit: value,
+                            rujukan: 'none',
+                          });
+                        }}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none"
                     >
                       <option value="ringan">Ringan</option>
@@ -462,27 +442,6 @@ const handleSimpanRiwayat = async () => {
                   />
                 </div>
 
-                {selectedKunjungan.status_saat_ini === 'poli_umum_review' && (
-                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-4">
-                    <h3 className="font-semibold text-blue-800">
-                      Hasil Pemeriksaan Penunjang
-                    </h3>
-
-                    <div className="bg-white rounded-xl border border-blue-100 p-4">
-                      <p className="font-semibold text-slate-700 mb-2">Hasil Lab</p>
-                      <pre className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed">
-                        {hasilLab?.hasil_lab || 'Belum ada hasil lab.'}
-                      </pre>
-                    </div>
-
-                    <div className="bg-white rounded-xl border border-blue-100 p-4">
-                      <p className="font-semibold text-slate-700 mb-2">Hasil Radiologi</p>
-                      <pre className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed">
-                        {hasilRadiologi?.hasil_radiologi || 'Belum ada hasil radiologi.'}
-                      </pre>
-                    </div>
-                  </div>
-                )}
                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
                   <h3 className="font-semibold text-emerald-800 mb-2">
                     Pasien Ringan / Resep Obat
@@ -510,7 +469,7 @@ const handleSimpanRiwayat = async () => {
                     </button>
                   </div>
                 </div>
-                <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100">
+                {/* <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100">
                   <label className="block text-sm font-semibold text-teal-800 mb-3 flex items-center gap-2">
                     <FileText size={16} />
                     Rujukan Selanjutnya
@@ -545,9 +504,9 @@ const handleSimpanRiwayat = async () => {
                       </label>
                     ))}
                   </div>
-                </div>
+                // </div> */}
 
-                <button
+                {/* <button
                   type="submit"
                   disabled={loading}
                   className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-medium shadow-lg shadow-teal-500/30 transition-all disabled:opacity-70 flex justify-center items-center gap-2"
@@ -560,7 +519,7 @@ const handleSimpanRiwayat = async () => {
                       Simpan & Proses Kunjungan
                     </>
                   )}
-                </button>
+                </button> */}
               </form>
             </motion.div>
           ) : (
@@ -743,6 +702,48 @@ const handleSimpanRiwayat = async () => {
       <p className="text-slate-700">
         {successMessage}
       </p>
+    </div>
+  </div>
+)}
+{confirmSpesialisOpen && (
+  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40">
+    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 text-center">
+      <div className="mx-auto mb-5 w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+        <Stethoscope className="text-blue-600" size={38} />
+      </div>
+
+      <h2 className="text-2xl font-bold text-slate-800 mb-3">
+        Rujuk ke Poli Spesialis?
+      </h2>
+
+      <p className="text-slate-600 mb-6">
+        Pasien kategori berat akan dipindahkan ke antrean dokter spesialis.
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setConfirmSpesialisOpen(false);
+            setFormData({
+              ...formData,
+              kategori_penyakit: 'ringan',
+              rujukan: 'none',
+            });
+          }}
+          className="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold"
+        >
+          Batal
+        </button>
+
+        <button
+          type="button"
+          onClick={handleRujukSpesialis}
+          className="py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+        >
+          Iya, Rujuk
+        </button>
+      </div>
     </div>
   </div>
 )}

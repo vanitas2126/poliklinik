@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, User, Briefcase, Mail, Key, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api';
+import axios from 'axios';
+const DOKTER_API = 'http://192.168.0.101:8000/api/dokters';
 
 interface Dokter {
   id: number;
@@ -32,14 +34,21 @@ export default function MasterDokter() {
     fetchDokters();
   }, []);
 
-  const fetchDokters = async () => {
-    try {
-      const response = await api.get('/dokters');
-      setDokters(response.data);
-    } catch (error) {
-      console.error('Failed to fetch dokters', error);
-    }
-  };
+const fetchDokters = async () => {
+  try {
+
+    // ===== LOCAL DATABASE =====
+    const response = await api.get('/dokters');
+    setDokters(response.data);
+
+    // ===== API DOKTER (HARI H) =====
+    // const response = await axios.get(`${DOKTER_API}/dokters`);
+    // setDokters(response.data);
+
+  } catch (error) {
+    console.error('Failed to fetch dokters', error);
+  }
+};
 
   const resetForm = () => {
     setFormData({
@@ -63,7 +72,7 @@ export default function MasterDokter() {
 
     const spesialisLower = dokter.spesialis.toLowerCase();
 
-    if (['umum', 'laboratorium', 'radiologi'].includes(spesialisLower)) {
+    if (['umum'].includes(spesialisLower)) {
       setJenisSpesialis(spesialisLower);
       setDetailSpesialis('');
     } else {
@@ -155,7 +164,7 @@ export default function MasterDokter() {
             Master Data Dokter
           </h1>
           <p className="text-slate-500 mt-1">
-            Kelola data dokter, spesialisasi, petugas lab, dan radiologi
+            Kelola data dokter dan spesialisasi
           </p>
         </div>
 
@@ -302,8 +311,6 @@ export default function MasterDokter() {
                     >
                       <option value="">Pilih jenis</option>
                       <option value="umum">Umum</option>
-                      <option value="laboratorium">Laboratorium</option>
-                      <option value="radiologi">Radiologi</option>
                       <option value="spesialis">Spesialis</option>
                     </select>
                   </div>
