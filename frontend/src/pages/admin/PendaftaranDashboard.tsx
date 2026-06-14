@@ -130,51 +130,33 @@ const filteredKunjungans = kunjungans.filter((item) =>
 //
 // ================================
 
-// const fetchKunjungans = async () => {
-//   try {
-
-//     // REGISTRASI
-//     const pasienRes = await axios.get(
-//       'http://192.168.1.10:8000/api/pasien'
-//     );
-
-//     const antrianRes = await axios.get(
-//       'http://192.168.1.10:8000/api/antrian'
-//     );
-
-//     console.log(pasienRes.data);
-//     console.log(antrianRes.data);
-
-//   } catch (error) {
-//     console.error(error);
-//   }
-// };
 const fetchKunjungans = async () => {
   try {
+
+    // REGISTRASI
     const pasienRes = await axios.get(
-      'http://192.168.0.101:3001/api/pasien'
+      'http://192.168.1.101:8000/api/pasien'
     );
 
     const antrianRes = await axios.get(
-      'http://192.168.0.101:3001/api/antrian'
+      'http://192.168.1.101:8000/api/antrian'
     );
 
-    console.log('Pasien:', pasienRes.data);
-    console.log('Antrian:', antrianRes.data);
+    console.log(pasienRes.data);
+    console.log(antrianRes.data);
 
   } catch (error) {
     console.error(error);
   }
 };
-  // const fetchKunjungans = async () => {
-  //   try {
-  //     const response = await api.get('/kunjungans'); 
-  //     // axios.get(`${REGISTRASI_API}/antrian`)
-  //     setKunjungans(response.data);
-  //   } catch (error) {
-  //     console.error('Failed to fetch kunjungans', error);
-  //   }
-  // };
+// const fetchKunjungans = async () => {
+//   try {
+//     const response = await api.get('/kunjungans');
+//     setKunjungans(response.data);
+//   } catch (error) {
+//     console.error('Failed to fetch kunjungans', error);
+//   }
+// };
 
   return (
     <motion.div

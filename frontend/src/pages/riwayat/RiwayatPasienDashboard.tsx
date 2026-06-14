@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import api from '../../api';
-import { User, Stethoscope, Search, Download } from 'lucide-react';
+import { User, Stethoscope, Search, Download, Pill, Plus, Trash2, Send, X } from 'lucide-react';
 
 export default function RiwayatPasienDashboard() {
   const [riwayat, setRiwayat] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [openResepFormId, setOpenResepFormId] = useState<number | null>(null);
+  const [resepList, setResepList] = useState<any[]>([]);
 
   useEffect(() => {
     fetchRiwayat();
@@ -12,13 +14,12 @@ export default function RiwayatPasienDashboard() {
 
 const fetchRiwayat = async () => {
   try {
-    const [riwayatRes, umumRes, spesialisRes, labRes, radiologiRes] =
+    const [riwayatRes, umumRes, spesialisRes, resepRes] =
       await Promise.all([
         api.get('/riwayats'),
         api.get('/pemeriksaan-umums'),
         api.get('/pemeriksaan-spesialis'),
-        api.get('/pemeriksaan-labs'),
-        api.get('/pemeriksaan-radiologis'),
+        api.get('/resep-obats'),
       ]);
 
     const getUmum = (kunjunganId: number) =>
@@ -31,13 +32,8 @@ const fetchRiwayat = async () => {
         (item: any) => Number(item.kunjungan_id) === Number(kunjunganId)
       );
 
-    const getLab = (kunjunganId: number) =>
-      labRes.data.find(
-        (item: any) => Number(item.kunjungan_id) === Number(kunjunganId)
-      );
-
-    const getRadiologi = (kunjunganId: number) =>
-      radiologiRes.data.find(
+    const getResep = (kunjunganId: number) =>
+      resepRes.data.find(
         (item: any) => Number(item.kunjungan_id) === Number(kunjunganId)
       );
 
@@ -46,8 +42,7 @@ const fetchRiwayat = async () => {
 
       const umum = getUmum(kunjunganId);
       const spesialis = getSpesialis(kunjunganId);
-      const lab = getLab(kunjunganId);
-      const radiologi = getRadiologi(kunjunganId);
+      const resep = getResep(kunjunganId);
 
       return {
         ...item,
@@ -63,11 +58,8 @@ const fetchRiwayat = async () => {
         diagnosa_akhir: spesialis?.diagnosa_akhir || '-',
         tindakan_akhir: spesialis?.tindakan_akhir || '-',
 
-        hasil_lab: lab?.hasil_lab || null,
-        jenis_lab: lab?.jenis_pemeriksaan || null,
-
-        hasil_radiologi: radiologi?.hasil_radiologi || null,
-        jenis_radiologi: radiologi?.jenis_pemeriksaan || null,
+        resep_obat: resep ? resep.catatan_resep : null,
+        resep_status: resep ? resep.status : null,
 
         tagihan: item,
       };
@@ -78,6 +70,48 @@ const fetchRiwayat = async () => {
     console.error('Gagal mengambil riwayat pasien', error);
   }
 };
+
+  const handleOpenResepForm = (kunjunganId: number) => {
+    setOpenResepFormId(kunjunganId);
+    setResepList([
+      {
+        obat: 'Paracetamol 500mg',
+        dosis: '3x sehari',
+        aturan: 'Sesudah makan',
+        lama: '3 hari',
+        jumlah: '10 tablet',
+      },
+    ]);
+  };
+
+  const handleKirimResep = async (kunjunganId: number, sumber: string) => {
+    if (resepList.length === 0) {
+      alert('Minimal harus ada 1 obat.');
+      return;
+    }
+    const resepFinal = resepList
+      .map(
+        (r, index) =>
+          `${index + 1}. ${r.obat} | ${r.dosis} | ${r.aturan} | ${r.lama} | ${r.jumlah}`
+      )
+      .join('\n');
+
+    try {
+      await api.post('/resep-obats', {
+        kunjungan_id: kunjunganId,
+        sumber_resep: sumber === 'Poli Umum' ? 'poli_umum' : 'spesialis',
+        catatan_resep: resepFinal,
+        status: 'menunggu',
+      });
+
+      alert('Resep berhasil dikirim ke apotek.');
+      setOpenResepFormId(null);
+      fetchRiwayat();
+    } catch (error: any) {
+      console.error(error.response?.data || error);
+      alert(error.response?.data?.message || 'Gagal mengirim resep obat.');
+    }
+  };
 
   const getPasien = (item: any) => item.kunjungan?.pasien || {};
 
@@ -100,8 +134,7 @@ const fetchRiwayat = async () => {
       item.analisa_hasil_rujukan,
       item.diagnosa_akhir,
       item.tindakan_akhir,
-      item.hasil_lab,
-      item.hasil_radiologi,
+      item.resep_obat,
       item.sumber,
     ]
       .join(' ')
@@ -296,36 +329,18 @@ const fetchRiwayat = async () => {
   }
 
   ${
-    item.hasil_lab
+    item.resep_obat
       ? `
-        <h2 class="section-title">Hasil Laboratorium</h2>
+        <h2 class="section-title">Resep Obat</h2>
 
         <div class="card">
-          <div class="label">Jenis Pemeriksaan</div>
-          <div class="value">${item.jenis_lab || 'Darah Lengkap'}</div>
+          <div class="label">Status Resep</div>
+          <div class="value">${item.resep_status || 'menunggu'}</div>
         </div>
 
         <div class="card">
-          <div class="label">Hasil Lab</div>
-          <pre>${item.hasil_lab}</pre>
-        </div>
-      `
-      : ''
-  }
-
-  ${
-    item.hasil_radiologi
-      ? `
-        <h2 class="section-title">Hasil Radiologi</h2>
-
-        <div class="card">
-          <div class="label">Jenis Pemeriksaan</div>
-          <div class="value">${item.jenis_radiologi || '-'}</div>
-        </div>
-
-        <div class="card">
-          <div class="label">Hasil Radiologi</div>
-          <pre>${item.hasil_radiologi}</pre>
+          <div class="label">Catatan Resep</div>
+          <pre>${item.resep_obat}</pre>
         </div>
       `
       : ''
@@ -339,16 +354,6 @@ const fetchRiwayat = async () => {
         <div class="card">
           <div class="label">Biaya Poli Umum</div>
           <div class="value">Rp ${Number(item.tagihan.biaya_umum || 0).toLocaleString('id-ID')}</div>
-        </div>
-
-        <div class="card">
-          <div class="label">Biaya Laboratorium</div>
-          <div class="value">Rp ${Number(item.tagihan.biaya_lab || 0).toLocaleString('id-ID')}</div>
-        </div>
-
-        <div class="card">
-          <div class="label">Biaya Radiologi</div>
-          <div class="value">Rp ${Number(item.tagihan.biaya_radiologi || 0).toLocaleString('id-ID')}</div>
         </div>
 
         <div class="card">
@@ -400,7 +405,7 @@ const fetchRiwayat = async () => {
           Riwayat Pemeriksaan Pasien
         </h1>
         <p className="text-slate-500 mt-1">
-          Riwayat hanya menampilkan Poli Umum dan Poli Spesialis. Hasil Lab dan Radiologi muncul di dalamnya jika ada.
+          Riwayat menampilkan Poli Umum dan Poli Spesialis serta resep obat pasien.
         </p>
       </div>
 
@@ -526,28 +531,6 @@ const fetchRiwayat = async () => {
                         {item.kategori_penyakit || '-'}
                       </p>
                     </div>
-
-                    {item.hasil_lab && (
-                      <div className="md:col-span-2 bg-blue-50 rounded-xl border border-blue-100 p-4">
-                        <p className="font-semibold text-blue-700 mb-2">
-                          Hasil Laboratorium
-                        </p>
-                        <pre className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed">
-                          {item.hasil_lab}
-                        </pre>
-                      </div>
-                    )}
-
-                    {item.hasil_radiologi && (
-                      <div className="md:col-span-2 bg-orange-50 rounded-xl border border-orange-100 p-4">
-                        <p className="font-semibold text-orange-700 mb-2">
-                          Hasil Radiologi
-                        </p>
-                        <pre className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed">
-                          {item.hasil_radiologi}
-                        </pre>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="grid md:grid-cols-3 gap-4">
@@ -577,28 +560,6 @@ const fetchRiwayat = async () => {
                         {item.tindakan_akhir || '-'}
                       </p>
                     </div>
-
-                    {item.hasil_lab && (
-                      <div className="md:col-span-3 bg-blue-50 rounded-xl border border-blue-100 p-4">
-                        <p className="font-semibold text-blue-700 mb-2">
-                          Hasil Laboratorium
-                        </p>
-                        <pre className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed">
-                          {item.hasil_lab}
-                        </pre>
-                      </div>
-                    )}
-
-                    {item.hasil_radiologi && (
-                      <div className="md:col-span-3 bg-orange-50 rounded-xl border border-orange-100 p-4">
-                        <p className="font-semibold text-orange-700 mb-2">
-                          Hasil Radiologi
-                        </p>
-                        <pre className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed">
-                          {item.hasil_radiologi}
-                        </pre>
-                      </div>
-                    )}
                   </div>
                 )}
                 {item.tagihan && (
@@ -612,20 +573,6 @@ const fetchRiwayat = async () => {
         <span>Poli Umum</span>
         <span className="font-semibold">
           Rp {Number(item.tagihan.biaya_umum || 0).toLocaleString('id-ID')}
-        </span>
-      </div>
-
-      <div className="flex justify-between bg-white rounded-lg p-3">
-        <span>Laboratorium</span>
-        <span className="font-semibold">
-          Rp {Number(item.tagihan.biaya_lab || 0).toLocaleString('id-ID')}
-        </span>
-      </div>
-
-      <div className="flex justify-between bg-white rounded-lg p-3">
-        <span>Radiologi</span>
-        <span className="font-semibold">
-          Rp {Number(item.tagihan.biaya_radiologi || 0).toLocaleString('id-ID')}
         </span>
       </div>
 
@@ -645,6 +592,200 @@ const fetchRiwayat = async () => {
     </div>
   </div>
 )}
+
+                {item.resep_obat ? (
+                  <div className="mt-4 bg-teal-50 rounded-xl border border-teal-100 p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <p className="font-semibold text-teal-700 flex items-center gap-2">
+                        <Pill size={18} />
+                        Resep Obat Pasien
+                      </p>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
+                        item.resep_status === 'selesai' ? 'bg-emerald-100 text-emerald-800' :
+                        item.resep_status === 'diproses' ? 'bg-amber-100 text-amber-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {item.resep_status || 'menunggu'}
+                      </span>
+                    </div>
+                    <pre className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed bg-white border border-teal-100 rounded-lg p-3">
+                      {item.resep_obat}
+                    </pre>
+                  </div>
+                ) : (
+                  <div className="mt-4">
+                    {openResepFormId !== item.kunjungan_id ? (
+                      <button
+                        onClick={() => handleOpenResepForm(item.kunjungan_id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-sm transition-all"
+                      >
+                        <Pill size={16} />
+                        Beri Resep Obat
+                      </button>
+                    ) : (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
+                        <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                          <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                            <Pill className="text-emerald-600" size={18} />
+                            Form Resep Obat Pasien
+                          </h3>
+                          <button
+                            onClick={() => setOpenResepFormId(null)}
+                            className="text-slate-400 hover:text-red-500"
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {resepList.map((med, medIndex) => (
+                            <div key={medIndex} className="p-3 border border-slate-200 rounded-lg bg-white space-y-3">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-semibold text-slate-600">Obat {medIndex + 1}</span>
+                                {resepList.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setResepList(resepList.filter((_, i) => i !== medIndex))}
+                                    className="text-red-500 text-xs font-medium hover:underline flex items-center gap-1"
+                                  >
+                                    <Trash2 size={12} /> Hapus
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-semibold text-slate-500 uppercase">Nama Obat</label>
+                                  <select
+                                    value={med.obat}
+                                    onChange={(e) => {
+                                      const newResep = [...resepList];
+                                      newResep[medIndex].obat = e.target.value;
+                                      setResepList(newResep);
+                                    }}
+                                    className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-md"
+                                  >
+                                    <option>Paracetamol 500mg</option>
+                                    <option>Amoxicillin 500mg</option>
+                                    <option>Ibuprofen 400mg</option>
+                                    <option>CTM 4mg</option>
+                                    <option>Vitamin C 500mg</option>
+                                    <option>Antasida DOEN</option>
+                                    <option>OBH Sirup</option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-semibold text-slate-500 uppercase">Dosis</label>
+                                  <select
+                                    value={med.dosis}
+                                    onChange={(e) => {
+                                      const newResep = [...resepList];
+                                      newResep[medIndex].dosis = e.target.value;
+                                      setResepList(newResep);
+                                    }}
+                                    className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-md"
+                                  >
+                                    <option>1x sehari</option>
+                                    <option>2x sehari</option>
+                                    <option>3x sehari</option>
+                                    <option>4x sehari</option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-semibold text-slate-500 uppercase">Aturan</label>
+                                  <select
+                                    value={med.aturan}
+                                    onChange={(e) => {
+                                      const newResep = [...resepList];
+                                      newResep[medIndex].aturan = e.target.value;
+                                      setResepList(newResep);
+                                    }}
+                                    className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-md"
+                                  >
+                                    <option>Sebelum makan</option>
+                                    <option>Sesudah makan</option>
+                                    <option>Saat makan</option>
+                                    <option>Sebelum tidur</option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-semibold text-slate-500 uppercase">Lama</label>
+                                  <select
+                                    value={med.lama}
+                                    onChange={(e) => {
+                                      const newResep = [...resepList];
+                                      newResep[medIndex].lama = e.target.value;
+                                      setResepList(newResep);
+                                    }}
+                                    className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-md"
+                                  >
+                                    <option>3 hari</option>
+                                    <option>5 hari</option>
+                                    <option>7 hari</option>
+                                    <option>14 hari</option>
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-semibold text-slate-500 uppercase">Jumlah</label>
+                                  <select
+                                    value={med.jumlah}
+                                    onChange={(e) => {
+                                      const newResep = [...resepList];
+                                      newResep[medIndex].jumlah = e.target.value;
+                                      setResepList(newResep);
+                                    }}
+                                    className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-md"
+                                  >
+                                    <option>6 tablet</option>
+                                    <option>10 tablet</option>
+                                    <option>15 tablet</option>
+                                    <option>21 tablet</option>
+                                    <option>1 botol</option>
+                                    <option>2 strip</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          <button
+                            type="button"
+                            onClick={() => setResepList([...resepList, {
+                              obat: 'Paracetamol 500mg',
+                              dosis: '3x sehari',
+                              aturan: 'Sesudah makan',
+                              lama: '3 hari',
+                              jumlah: '10 tablet',
+                            }])}
+                            className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg border border-dashed border-emerald-300 transition-all flex justify-center items-center gap-1"
+                          >
+                            <Plus size={14} /> Tambah Obat
+                          </button>
+                        </div>
+
+                        <div className="flex gap-2 justify-end pt-2 border-t border-slate-200">
+                          <button
+                            onClick={() => setOpenResepFormId(null)}
+                            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold"
+                          >
+                            Batal
+                          </button>
+                          <button
+                            onClick={() => handleKirimResep(item.kunjungan_id, item.sumber)}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+                          >
+                            <Send size={12} /> Kirim ke Apotek
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
                   <Stethoscope size={16} />
                   Pemeriksaan {item.sumber}
