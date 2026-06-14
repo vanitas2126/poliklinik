@@ -1,0 +1,34 @@
+import { Outlet, Link } from "react-router-dom";
+
+export default function DashboardLayout() {
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar Placeholder */}
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:block">
+        <div className="p-4 border-b border-slate-100">
+          <h1 className="text-xl font-bold text-blue-600">KlinikKu</h1>
+        </div>
+        <nav className="p-4 space-y-2">
+          <Link to="/admin" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Pendaftaran</Link>
+          <Link to="/admin/dokter" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Master Dokter</Link>
+          <Link to="/dokter-umum" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Poli Umum</Link>
+          <Link to="/dokter-spesialis" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Poli Spesialis</Link>
+          <Link to="/riwayat-pasien" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Riwayat Pasien</Link>
+          <Link to="/riwayat-obat" className="block p-2 rounded hover:bg-slate-50 text-slate-700">Riwayat Obat Pasien</Link>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6">
+          <h2 className="text-lg font-semibold text-slate-800">
+            Dashboard
+          </h2>
+        </header>
+        <div className="p-6 flex-1 overflow-auto">
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -1,0 +1,41 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+// Layouts
+import AuthLayout from "./layouts/AuthLayout";
+import DashboardLayout from "./layouts/DashboardLayout";
+
+// Auth Pages
+import Login from "./pages/Login";
+
+// Dashboard Pages (Role-based)
+import PendaftaranDashboard from "./pages/admin/PendaftaranDashboard";
+import MasterDokter from "./pages/admin/MasterDokter";
+import DokterUmumDashboard from "./pages/dokter-umum/DokterUmumDashboard";
+import DokterSpesialisDashboard from "./pages/dokter-spesialis/DokterSpesialisDashboard";
+import RiwayatPasienDashboard from "./pages/riwayat/RiwayatPasienDashboard.tsx";
+import RiwayatObatPasienDashboard from "./pages/riwayat/RiwayatObatPasienDashboard.tsx";
+
+function AppRouter() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+        </Route>
+
+        {/* Protected Routes wrapped in DashboardLayout with Role Guards placeholder */}
+        <Route path="/" element={<DashboardLayout />}>
+          <Route index element={<Navigate to="/login" replace />} />
+          <Route path="admin" element={<PendaftaranDashboard />} />
+          <Route path="admin/dokter" element={<MasterDokter />} />
+          <Route path="dokter-umum" element={<DokterUmumDashboard />} />
+          <Route path="dokter-spesialis" element={<DokterSpesialisDashboard />} />
+          <Route path="riwayat-pasien" element={<RiwayatPasienDashboard />} />
+          <Route path="riwayat-obat" element={<RiwayatObatPasienDashboard />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default AppRouter;
