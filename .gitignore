@@ -1,2 +1,6 @@
 *.exe
 *.bat
+node_modules/
+vendor/
+.env
+>>>>>>> cfe4016b991721e696d7385c6f6d22c77f809481
